@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seating Chart Editor</title>
+<meta name="robots" content="noindex">
+<style>
+@font-face { font-family: EBG; src: url(fonts/EBGaramond.ttf) format('truetype'); font-weight: 400; font-display: block; }
+:root { --bg: #f6f4ee; --panel: #fffdf8; --text: #2f3a2d; --muted: #6c7468; --line: #dcd8cc; --btn: #3d4839; --btn-text: #fff; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #1d201c; --panel: #262a25; --text: #ecefe8; --muted: #a9b0a4; --line: #3a4038; --btn: #b9c9ad; --btn-text: #1d201c; }
+}
+:root[data-theme="dark"] { --bg: #1d201c; --panel: #262a25; --text: #ecefe8; --muted: #a9b0a4; --line: #3a4038; --btn: #b9c9ad; --btn-text: #1d201c; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { padding: 20px 24px 8px; }
+header h1 { font: 400 30px/1.2 EBG, Georgia, serif; margin: 0; }
+header p { margin: 4px 0 0; color: var(--muted); }
+main { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; gap: 24px; padding: 16px 24px 40px; align-items: start; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; position: sticky; top: 12px; }
+label { display: block; font-weight: 600; margin: 14px 0 4px; }
+label:first-child { margin-top: 0; }
+.hint { color: var(--muted); font-size: 13px; margin: 2px 0 6px; }
+input, select, textarea { width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+textarea { min-height: 120px; resize: vertical; font-family: ui-monospace, Consolas, monospace; font-size: 13px; line-height: 1.45; }
+.row { display: flex; gap: 10px; }
+.row > div { flex: 1; }
+.links { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; margin-top: 8px; align-items: center; }
+#count { flex-basis: 100%; }
+.links button { background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font: inherit; }
+#count { margin-left: auto; color: var(--muted); }
+#dl { width: 100%; margin-top: 18px; padding: 13px; font: 600 16px system-ui, sans-serif; color: var(--btn-text); background: var(--btn); border: 0; border-radius: 10px; cursor: pointer; }
+#dl:disabled { opacity: .6; cursor: wait; }
+.private { color: var(--muted); font-size: 12.5px; margin: 10px 0 0; text-align: center; }
+#warn { margin: 12px 0 0; padding: 10px 14px 10px 28px; background: #fff4d6; color: #5c4400; border-radius: 8px; font-size: 13.5px; }
+#stage { position: relative; width: 100%; overflow: hidden; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.15); }
+#page { position: absolute; left: 0; top: 0; width: 1728px; height: 2304px; transform-origin: 0 0; overflow: hidden; }
+#page img, #page .t, #page .frame { position: absolute; }
+#page .frame { inset: 52.8px; border: 1.5px solid var(--accent); opacity: .5; }
+#page .t { text-align: center; white-space: nowrap; line-height: 1.15; font-family: EBG, serif; font-weight: 400; }
+h2 { font: 600 15px system-ui, sans-serif; margin: 18px 0 2px; }
+#tables { display: grid; gap: 10px; margin-top: 8px; }
+.card { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--bg); }
+.card-head { display: flex; gap: 8px; margin-bottom: 6px; }
+.card-head input { font-weight: 600; background: var(--panel); }
+.card textarea { min-height: 0; background: var(--panel); font-family: inherit; font-size: 14px; }
+.card .n { color: var(--muted); font-size: 12px; text-align: right; margin-top: 2px; }
+.rm { flex: none; width: 36px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 8px; font-size: 20px; line-height: 1; cursor: pointer; }
+.secondary { width: 100%; margin-top: 10px; padding: 10px; font: 600 14px system-ui, sans-serif; color: var(--text); background: var(--panel); border: 1.5px dashed var(--line); border-radius: 10px; cursor: pointer; }
+.split-row { align-items: end; }
+.split-row .secondary { border-style: solid; margin-top: 0; }
+#bulk { min-height: 120px; }
+details { margin-top: 14px; font-size: 13.5px; color: var(--muted); }
+details summary { cursor: pointer; }
+@media (max-width: 760px) {
+  header { padding: 16px 16px 4px; }
+  main { grid-template-columns: 1fr; padding: 12px 16px 32px; }
+  .panel { position: static; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Your Seating Chart</h1>
+  <p>Type your names and your guests, then download a print-ready PDF (18&times;24 in).</p>
+</header>
+<main>
+  <section class="panel">
+    <label for="names">Your names</label>
+    <input id="names" maxlength="60" autocomplete="off">
+    <label for="date">Date</label>
+    <input id="date" maxlength="60" autocomplete="off">
+    <h2>Tables &amp; guests</h2>
+    <p class="hint">Each box is one table. Type the guests sitting there, one name per line. The table name is optional.</p>
+    <div id="tables"></div>
+    <button id="add" type="button" class="secondary">+ Add a table</button>
+    <div class="links"><button id="clearall" type="button">Remove all &amp; start empty</button><button id="sample" type="button">Show example</button><span id="count"></span></div>
+    <details id="bulkbox">
+      <summary>Already have a guest list? Paste it all at once</summary>
+      <p class="hint">Paste every name here, one per line (for example copied from Excel or Google Sheets). We will split them into tables for you.</p>
+      <textarea id="bulk" rows="6" placeholder="Olivia Bennett&#10;Liam Morgan&#10;Emma Reed&#10;..." spellcheck="false"></textarea>
+      <div class="row split-row">
+        <div><label for="per">Guests per table</label><input id="per" type="number" min="1" max="14" inputmode="numeric"></div>
+        <div><button id="split" type="button" class="secondary">Put into tables</button></div>
+      </div>
+    </details>
+    <details>
+      <summary>More options</summary>
+      <div class="row">
+        <div><label for="numbering">Default table names</label><select id="numbering"><option value="words">Table One</option><option value="num">Table 1</option></select></div>
+        <div><label for="theme">Colour</label><select id="theme"><option value="sage">Sage greenery</option><option value="dusty-blue">Dusty blue</option><option value="blush">Blush pink</option></select></div>
+      </div>
+    </details>
+    <ul id="warn" hidden></ul>
+    <button id="dl" type="button" disabled>Download PDF</button>
+    <p class="private">Everything happens in your browser. Your guest list is never uploaded.</p>
+  </section>
+  <section><div id="stage"><div id="page"></div></div></section>
+</main>
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="vendor/fontkit.umd.min.js"></script>
+<script src="themes.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
