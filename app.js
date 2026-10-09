@@ -258,6 +258,12 @@
   async function download() {
     const btn = $('dl'); btn.disabled = true; const label = btn.textContent; btn.textContent = 'Preparing your PDF...';
     try {
+      // Onizleme 120 ms gecikmeli guncellenir; indirme aninda formu yeniden oku ki son yazilan harf de
+      // PDF'e girsin (9 Ekim canli test: sayfa acilir acilmaz tiklayinca last=null -> PDF uretilmedi).
+      clearTimeout(timer);
+      const d = read();
+      last = { d, L: layout(d, (s, sz) => measureFont.widthOfTextAtSize(s, sz)) };
+      renderPreview(last.L, d);
       const out = await makePdf(last.L, last.d);
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([out], { type: 'application/pdf' }));
